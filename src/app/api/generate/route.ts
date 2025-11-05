@@ -1,11 +1,9 @@
-import { createOpenAI } from '@ai-sdk/openai';
-import { streamObject } from 'ai';
+import { openai } from '@ai-sdk/openai';
+import { Output, tool, ToolLoopAgent } from 'ai';
 import { TextEncoder } from 'util';
 import { z } from 'zod';
-
-const oai = createOpenAI({
-    apiKey: process.env.OPENAI_API_KEY!,
-})
+import fs from 'fs';
+import { searchWeb } from '../../../lib/searchUtils';
 
 const ResponseComponent = (() => {
     const UIComponent: z.ZodTypeAny = z.lazy(() =>
@@ -373,7 +371,9 @@ THINK before using components:
 - Do I need user input? → Create a proper form
 - Is this a multi-step process? → Use Timeline or Accordion
 - Are there natural follow-up questions? → Then add Buttons (in Flex row)
+- Am I comparing numbers → Use charts
 
+Please note that these are examples of how your responses should be like, look at them carefully and generate an as good and as visually appealing response as you can.
 <example>
 User: What's the weather today?
 Response:
@@ -434,41 +434,35 @@ Button: label=Try these examples, action=open_python_repl, variant=primary
 User: Help me plan a trip to Paris
 Response:
 Text: Paris is an incredible destination! I'll help you plan an unforgettable trip to the City of Light. The best time to visit is typically April-June or September-October when the weather is pleasant and crowds are manageable.
-Image: searchQuery="eiffel tower paris sunset", fit="cover", radius=12
-Accordion: items=[
-    {title: Must-See Attractions, content: [
-        List: bulletType=disc, children=[
-            Text: Eiffel Tower - Book tickets online to skip lines,
-            Text: Louvre Museum - Home to the Mona Lisa and thousands of artworks,
-            Text: Notre-Dame Cathedral - Currently under restoration but still worth seeing,
-            Text: Arc de Triomphe - Climb for panoramic city views,
-            Text: Sacré-Cœur - Beautiful basilica with stunning views of Paris
-        ]
+Hero: title=Paris Trip Planning, subtitle=Your Gateway to Romance and Culture, backgroundImageQuery="eiffel tower paris sunset", overlayColor=rgba(0,0,0,0.4)
+Feature: title=Why Paris?, description=Discover the magic of the City of Light, features=[Text: Iconic landmarks and world-class museums, Text: Culinary delights from croissants to fine dining, Text: Romantic ambiance perfect for couples or solo adventures]
+Tabs: tabs=[
+    {label: Attractions, content: [
+        Grid: columns=2
+            Card: title=Louvre Museum, imageQuery="louvre museum paris", description=Home to the Mona Lisa and thousands of masterpieces, children=[Badge: text=Top Rated, variant=success]
+            Card: title=Eiffel Tower, imageQuery="eiffel tower paris", description=Iconic iron lattice tower with stunning views, children=[Badge: text=Must-See, variant=primary]
+            Card: title=Notre-Dame, imageQuery="notre dame paris", description=Gothic cathedral under restoration, children=[Badge: text=Historical, variant=info]
     ]},
-    {title: Where to Stay, content: [
-        Text: Choose your neighborhood based on what you want to experience:,
+    {label: Food Scene, content: [
+        Text: Paris offers incredible culinary experiences from street food to Michelin-starred restaurants.
         List: children=[
-            Text: Le Marais (4th) - Trendy, central, great food and nightlife,
-            Text: Saint-Germain (6th) - Classic Parisian charm, cafés, boutiques,
-            Text: Montmartre (18th) - Artistic, bohemian, more affordable,
-            Text: Champs-Élysées (8th) - Luxury shopping, business hotels
+            Text: Try authentic croissants and baguettes at local bakeries,
+            Text: Enjoy escargot and coq au vin at traditional bistros,
+            Text: Explore food markets like Marché des Enfants Rouges
         ]
     ]},
-    {title: Getting Around, content: [
-        Text: Paris has excellent public transportation:,
-        Badge: text=Metro, variant=info,
-        Text: 14 lines covering the entire city. Buy a carnet (10 tickets) for savings.,
-        Badge: text=Walking, variant=success,
-        Text: Paris is very walkable. Most attractions are within 30-45 minutes of each other.,
-        Badge: text=Vélib, variant=default,
-        Text: City bike-sharing system with stations everywhere.
+    {label: Nightlife, content: [
+        Text: From jazz clubs to rooftop bars, Paris comes alive at night.
+        Grid: columns=2
+            Card: title=Montmartre, imageQuery="montmartre paris nightlife", description=Bohemian district with cabarets and street performers
+            Card: title=Le Marais, imageQuery="le marais paris bars", description=Trendy area with gay bars and cocktail lounges
     ]}
-], allowMultiple=true
-Progress: value=3, max=7, label=Days recommended for first visit
+]
+Alert: variant=warning, title=Crowd Tips, description=Book attractions in advance during peak season to avoid long lines.
 Flex: direction=row
-    Button: label=5-day itinerary, action=paris_5day_plan
-    Button: label=Restaurant guide, action=paris_restaurants
-    Button: label=Budget calculator, action=paris_budget
+    Button: label=Itinerary Builder, action=build_paris_itinerary, variant=primary
+    Button: label=Local Guides, action=find_paris_guides, variant=outline
+    Button: label=Budget Calculator, action=paris_budget_calc, variant=secondary
 </example>
 
 <example>
@@ -583,27 +577,52 @@ IMPORTANT FORMATTING RULES:
    Flex: direction=row
    Image: searchQuery="example1"
    Image: searchQuery="example2"
+4. Make sure the AI is interactable so cards, buttons and other components which support clickAction have them so user can click to get more information. Always include more information button in cards and other places in a way it looks good.
+5. Make sure to generate deep, visually rich responses with multiple components - do not generate shallow responses with just one or two components unless its a greeting or a writing task.
+6. YOU'RE NOT REQUIRED TO STRICTILY FOLLOW THE EXAMPLES, THEY'RE JUST TO SHOW YOU WHAT YOU'RE CAPABLE OF RESPONDING, YOUR RESPONSES SHOULD NEVER BE REPETITIVE OR CLONED, ALWAYS BE CREATIVE AND DYNAMIC.
+
+Today's date and time is: ${new Date().toISOString()}
 
 Always return valid JSON adhering to the schema. Keep responses natural and conversational. When users interact with buttons or forms, their actions will be sent as messages.
+
+Schema: ${JSON.stringify(z.toJSONSchema(ResponseComponent))}
 `
+
+fs.writeFileSync('prompt.txt', JSON.stringify(z.toJSONSchema(ResponseComponent)))
 
 export const POST = async (request: Request) => {
     const body = await request.json();
 
-    const { partialObjectStream } = streamObject({
-        model: oai('gpt-4.1-mini'),
-        schema: ResponseComponent,
-        system: systemPrompt,
-        messages: body.messages,
-        temperature: 0.7
+    const agent = new ToolLoopAgent({
+        model: openai('gpt-4.1'),
+        instructions: systemPrompt,
+        tools: {
+            search: tool({
+                description: 'Search the web for information',
+                inputSchema: z.object({
+                    query: z.string().describe('The query to search the web for.'),
+                }),
+                execute: async ({ query }) => {
+                    return await searchWeb(query)
+                },
+            }),
+        },
+        temperature: 1,
+        output: Output.object({
+            schema: ResponseComponent
+        })
     });
+
+    const { partialOutputStream } = await agent.stream({
+        messages: body.messages
+    })
 
     const encoder = new TextEncoder();
 
     const stream = new ReadableStream({
         async start(controller) {
             try {
-                for await (const partialObject of partialObjectStream) {
+                for await (const partialObject of partialOutputStream) {
                     const data = `data: ${JSON.stringify(partialObject)}\n\n`;
                     controller.enqueue(encoder.encode(data));
                 }
