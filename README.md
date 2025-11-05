@@ -1,6 +1,6 @@
 # Epoch ✨
 
-A visual interface for LLMs. Epoch transforms traditional text-based AI conversations into interactive, component-driven experiences. Every response is rendered as a living interface with clickable elements, dynamic forms, live data visualizations, and explorable UI - making LLM interactions intuitive, engaging, and truly visual.
+A **visual interface** for LLMs. Epoch transforms traditional text-based AI conversations into **interactive**, **component-driven** experiences. Every response is rendered as a **living interface** with **clickable elements**, **dynamic forms**, **live data visualizations**, and **explorable UI** - making LLM interactions intuitive, engaging, and truly visual.
 
 ![Epoch Screenshot](./.assets/screenshot.png)
 
@@ -8,7 +8,7 @@ A visual interface for LLMs. Epoch transforms traditional text-based AI conversa
 
 Traditional LLM interactions are fundamentally constrained by their text-first nature. Even with static visualizations, users remain passive consumers of information with no mechanism for bidirectional interaction within the response itself.
 
-Epoch eliminates this constraint through a structured component architecture. The LLM generates type-safe JSON schemas representing UI component trees, which are recursively rendered into fully interactive React interfaces. Each component—whether a data visualization, form input, or action button—maintains bidirectional state flow with the conversation context. User interactions are serialized back into the dialogue, enabling the LLM to build upon previous interface states and create truly stateful, explorable experiences.
+Epoch eliminates this constraint through a structured component architecture. The LLM generates type-safe JSON schemas representing UI component trees, which are recursively rendered into fully interactive React interfaces. Each component - whether a data visualization, form input, or action button - maintains bidirectional state flow with the conversation context. User interactions are serialized back into the dialogue, enabling the LLM to build upon previous interface states and create truly stateful, explorable experiences.
 
 This architecture transforms LLMs from text generators into interface compilers, where every response is a composable tree of interactive components rather than static markup.
 
@@ -44,9 +44,9 @@ Epoch supports a wide range of UI components:
 
 ### Prerequisites
 
-- Node.js 18+ and Yarn
+- Node.js 18+
 - LLM API key (currently supports OpenAI)
-- Serper API key from [serper.dev](https://serper.dev) for web and image search capabilities
+- Serper API key from [serper.dev](https://serper.dev) for web and image search (SearxNG capibilities coming soon)
 
 ### Setup
 
@@ -126,7 +126,6 @@ npm run dev
 
 - **Web Search Integration**
   - SearXNG support for privacy-focused web search
-  - Real-time web data fetching
   - Automatic source citations
   - Live content scraping capabilities
 
@@ -160,12 +159,36 @@ npm run dev
 
 ## Contributing
 
-Contributions are welcome! Feel free to open issues or submit pull requests.
+Contributions are highly encouraged! Epoch is built to be extensible and community driven. Here's how you can contribute:
 
-## License
+### Ways to Contribute
 
-MIT
+- **🐛 Bug Reports**: Found an issue? Open a detailed bug report with reproduction steps
+- **💡 Feature Requests**: Have ideas for new components or capabilities? Share them in discussions
+- **🔧 Pull Requests**: Submit PRs for bug fixes, new components, or performance improvements
+- **📖 Documentation**: Help improve docs, add examples, or create tutorials
+- **🎨 Component Development**: Build new UI component renderers or extend existing ones
+
+### Development Guidelines
+
+1. Fork the repository and create a feature branch
+2. Follow the existing code structure and TypeScript conventions
+3. Add new components to `src/components/llm-components/`
+4. Update the Zod schema in `src/app/api/generate/route.ts` for new component types
+5. Test thoroughly with different LLM outputs
+6. Submit a PR with clear description and examples
+
+For major changes, please open an issue first to discuss the proposed changes.
+
+## Support
+
+Need help or want to connect?
+
+- **📧 Email**: `kushagra20103[at]gmail.com`
+- **💬 Discord**: `itzcrazykns`
+- **🐛 Issues**: [GitHub Issues](https://github.com/itzcrazykns/epoch/issues) for bug reports and feature requests
+- **💭 Discussions**: [GitHub Discussions](https://github.com/itzcrazykns/epoch/discussions) for questions and ideas
 
 ---
 
-Built with passion to make AI conversations truly interactive.
+The project is built with passion to make AI conversations truly interactive. If you like Epoch, consider giving it a ⭐ on GitHub!
