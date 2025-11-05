@@ -18,44 +18,54 @@ export function GalleryRenderer({ component, onAction }: GalleryRendererProps) {
   useEffect(() => {
     if (images.length === 0) return;
 
-    images.forEach((img, index) => {
-      if (img.imageQuery && !img.image && img.imageQuery !== loadedQueries[index] && !loading[index]) {
-        setLoading(prev => {
-          const updated = [...prev];
-          updated[index] = true;
-          return updated;
-        });
+    const debounceTimers: NodeJS.Timeout[] = [];
 
-        fetch('/api/search-image', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ query: img.imageQuery }),
-        })
-          .then(res => res.json())
-          .then(data => {
-            if (data.imageUrl) {
-              setLoadedImages(prev => {
-                const updated = [...prev];
-                updated[index] = data.imageUrl;
-                return updated;
-              });
-              setLoadedQueries(prev => {
-                const updated = [...prev];
-                updated[index] = img.imageQuery!;
-                return updated;
-              });
-            }
-          })
-          .catch(err => console.error("Failed to fetch image:", err))
-          .finally(() => {
-            setLoading(prev => {
-              const updated = [...prev];
-              updated[index] = false;
-              return updated;
-            });
+    images.forEach((img, index) => {
+      if (img.imageQuery && img.imageQuery.length >= 3 && !img.image && img.imageQuery !== loadedQueries[index] && !loading[index]) {
+        const debounceTimer = setTimeout(() => {
+          setLoading(prev => {
+            const updated = [...prev];
+            updated[index] = true;
+            return updated;
           });
+
+          fetch('/api/search-image', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ query: img.imageQuery }),
+          })
+            .then(res => res.json())
+            .then(data => {
+              if (data.imageUrl) {
+                setLoadedImages(prev => {
+                  const updated = [...prev];
+                  updated[index] = data.imageUrl;
+                  return updated;
+                });
+                setLoadedQueries(prev => {
+                  const updated = [...prev];
+                  updated[index] = img.imageQuery!;
+                  return updated;
+                });
+              }
+            })
+            .catch(err => console.error("Failed to fetch image:", err))
+            .finally(() => {
+              setLoading(prev => {
+                const updated = [...prev];
+                updated[index] = false;
+                return updated;
+              });
+            });
+        }, 700);
+
+        debounceTimers.push(debounceTimer);
       }
     });
+
+    return () => {
+      debounceTimers.forEach(timer => clearTimeout(timer));
+    };
   }, [images, loadedQueries, loading]);
 
   if (images.length === 0) return null;

@@ -27,33 +27,39 @@ export function CardRenderer({
   const [loadedQuery, setLoadedQuery] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!image && imageQuery && imageQuery !== loadedQuery) {
+    if (!image && imageQuery && imageQuery.length >= 3 && imageQuery !== loadedQuery) {
       let cancelled = false;
 
-      const fetchImage = async () => {
-        try {
-          setLoading(true);
-          const res = await fetch('/api/search-image', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ query: imageQuery }),
-          });
-          const data = await res.json();
-          if (!cancelled && data.imageUrl) {
-            setImageUrl(data.imageUrl);
-            setLoadedQuery(imageQuery);
+      const debounceTimer = setTimeout(() => {
+        const fetchImage = async () => {
+          try {
+            setLoading(true);
+            const res = await fetch('/api/search-image', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ query: imageQuery }),
+            });
+            const data = await res.json();
+            if (!cancelled && data.imageUrl) {
+              setImageUrl(data.imageUrl);
+              setLoadedQuery(imageQuery);
+            }
+          } catch (err) {
+            console.error("Failed to fetch image:", err);
+          } finally {
+            if (!cancelled) {
+              setLoading(false);
+            }
           }
-        } catch (err) {
-          console.error("Failed to fetch image:", err);
-        } finally {
-          if (!cancelled) {
-            setLoading(false);
-          }
-        }
-      };
+        };
 
-      fetchImage();
-      return () => { cancelled = true; };
+        fetchImage();
+      }, 700);
+
+      return () => {
+        cancelled = true;
+        clearTimeout(debounceTimer);
+      };
     }
   }, [image, imageQuery, loadedQuery]);
 

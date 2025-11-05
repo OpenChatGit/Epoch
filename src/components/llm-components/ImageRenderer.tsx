@@ -43,31 +43,34 @@ export function ImageRenderer({ component, isInFlexRow = false }: ImageRendererP
   const [loadedQuery, setLoadedQuery] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!src && searchQuery && searchQuery !== loadedQuery) {
+    if (!src && searchQuery && searchQuery.length >= 3 && searchQuery !== loadedQuery) {
       let cancelled = false;
 
-      const loadImage = async () => {
-        try {
-          setLoading(true);
-          const url = await searchImage(searchQuery);
-          if (!cancelled) {
-            setImageSrc(url);
-            setLoadedQuery(searchQuery);
-            setLoading(false);
+      const debounceTimer = setTimeout(() => {
+        const loadImage = async () => {
+          try {
+            setLoading(true);
+            const url = await searchImage(searchQuery);
+            if (!cancelled) {
+              setImageSrc(url);
+              setLoadedQuery(searchQuery);
+              setLoading(false);
+            }
+          } catch (err) {
+            console.error("Failed to fetch image:", err);
+            if (!cancelled) {
+              setError(true);
+              setLoading(false);
+            }
           }
-        } catch (err) {
-          console.error("Failed to fetch image:", err);
-          if (!cancelled) {
-            setError(true);
-            setLoading(false);
-          }
-        }
-      };
+        };
 
-      loadImage();
+        loadImage();
+      }, 700);
 
       return () => {
         cancelled = true;
+        clearTimeout(debounceTimer);
       };
     }
   }, [src, searchQuery, loadedQuery]);
