@@ -15,7 +15,7 @@ export function GridRenderer({
   component,
   onAction,
   formValues,
-  onFormChange
+  onFormChange,
 }: GridRendererProps) {
   const { columns = 2, children = [] } = component;
 
@@ -31,7 +31,9 @@ export function GridRenderer({
     <div
       className={cn(
         "grid gap-4",
-        gridColsClass[Math.min(3, Math.max(1, columns)) as keyof typeof gridColsClass]
+        gridColsClass[
+          Math.min(3, Math.max(1, columns)) as keyof typeof gridColsClass
+        ],
       )}
     >
       {children.map((child, index) => (

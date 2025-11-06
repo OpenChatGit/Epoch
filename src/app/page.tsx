@@ -21,7 +21,8 @@ export default function Home() {
   ]);
   const [input, setInput] = useState("");
   const [isStreaming, setIsStreaming] = useState(false);
-  const [currentStreamingResponse, setCurrentStreamingResponse] = useState<ResponseRoot | null>(null);
+  const [currentStreamingResponse, setCurrentStreamingResponse] =
+    useState<ResponseRoot | null>(null);
   const [formValues, setFormValues] = useState<Record<string, string>>({});
 
   const streamResponse = async (userMessage: string) => {
@@ -30,9 +31,12 @@ export default function Home() {
 
     let latestResponse: ResponseRoot | null = null;
 
-    const apiMessages = messages.map(msg => ({
+    const apiMessages = messages.map((msg) => ({
       role: msg.role,
-      content: typeof msg.content === "string" ? msg.content : JSON.stringify(msg.content),
+      content:
+        typeof msg.content === "string"
+          ? msg.content
+          : JSON.stringify(msg.content),
     }));
 
     apiMessages.push({
@@ -75,10 +79,13 @@ export default function Home() {
             if (data === "[DONE]") {
               if (latestResponse) {
                 const finalResponse: ResponseRoot = latestResponse;
-                setMessages(prev => [...prev, {
-                  role: "assistant",
-                  content: finalResponse
-                }]);
+                setMessages((prev) => [
+                  ...prev,
+                  {
+                    role: "assistant",
+                    content: finalResponse,
+                  },
+                ]);
               }
               setCurrentStreamingResponse(null);
               setIsStreaming(false);
@@ -98,10 +105,13 @@ export default function Home() {
       }
     } catch (err) {
       console.error("Streaming error:", err);
-      setMessages(prev => [...prev, {
-        role: "assistant",
-        content: "Sorry, an error occurred while processing your request."
-      }]);
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "assistant",
+          content: "Sorry, an error occurred while processing your request.",
+        },
+      ]);
       setIsStreaming(false);
       setCurrentStreamingResponse(null);
     }
@@ -113,7 +123,7 @@ export default function Home() {
     const userMessage = input.trim();
     setInput("");
 
-    setMessages(prev => [...prev, { role: "user", content: userMessage }]);
+    setMessages((prev) => [...prev, { role: "user", content: userMessage }]);
     await streamResponse(userMessage);
   };
 
@@ -123,17 +133,19 @@ export default function Home() {
     let actionMessage = `User clicked button: "${label}"`;
 
     if (Object.keys(formValues).length > 0) {
-      actionMessage += "\n\nForm data:\n" + Object.entries(formValues)
-        .map(([key, value]) => `- ${key}: ${value}`)
-        .join("\n");
+      actionMessage +=
+        "\n\nForm data:\n" +
+        Object.entries(formValues)
+          .map(([key, value]) => `- ${key}: ${value}`)
+          .join("\n");
     }
 
-    setMessages(prev => [...prev, { role: "user", content: actionMessage }]);
+    setMessages((prev) => [...prev, { role: "user", content: actionMessage }]);
     await streamResponse(actionMessage);
   };
 
   const handleFormChange = (id: string, value: string) => {
-    setFormValues(prev => ({ ...prev, [id]: value }));
+    setFormValues((prev) => ({ ...prev, [id]: value }));
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -149,7 +161,9 @@ export default function Home() {
         {messages.map((message, index) => (
           <div key={index}>
             {message.role === "user" ? (
-              <p className="text-black/50 text-sm font-[450]">{message.content as string}</p>
+              <p className="text-black/50 text-sm font-[450]">
+                {message.content as string}
+              </p>
             ) : (
               <div className="flex flex-row space-x-2 md:-translate-x-6">
                 <Avatar className="size-6 mt-4 shrink-0">
@@ -225,7 +239,7 @@ export default function Home() {
               disabled={isStreaming || !input.trim()}
               className="bg-gradient-to-br from-pink-500 to-yellow-500 text-white p-2 rounded-full text-sm font-medium shadow-sm hover:opacity-90 transition duration-200 cursor-pointer shrink-0 self-end disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <ArrowUp size={13}/>
+              <ArrowUp size={13} />
             </button>
           </div>
         </div>

@@ -21,37 +21,43 @@ export function GalleryRenderer({ component, onAction }: GalleryRendererProps) {
     const debounceTimers: NodeJS.Timeout[] = [];
 
     images.forEach((img, index) => {
-      if (img.imageQuery && img.imageQuery.length >= 3 && !img.image && img.imageQuery !== loadedQueries[index] && !loading[index]) {
+      if (
+        img.imageQuery &&
+        img.imageQuery.length >= 3 &&
+        !img.image &&
+        img.imageQuery !== loadedQueries[index] &&
+        !loading[index]
+      ) {
         const debounceTimer = setTimeout(() => {
-          setLoading(prev => {
+          setLoading((prev) => {
             const updated = [...prev];
             updated[index] = true;
             return updated;
           });
 
-          fetch('/api/search-image', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+          fetch("/api/search-image", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ query: img.imageQuery }),
           })
-            .then(res => res.json())
-            .then(data => {
+            .then((res) => res.json())
+            .then((data) => {
               if (data.imageUrl) {
-                setLoadedImages(prev => {
+                setLoadedImages((prev) => {
                   const updated = [...prev];
                   updated[index] = data.imageUrl;
                   return updated;
                 });
-                setLoadedQueries(prev => {
+                setLoadedQueries((prev) => {
                   const updated = [...prev];
                   updated[index] = img.imageQuery!;
                   return updated;
                 });
               }
             })
-            .catch(err => console.error("Failed to fetch image:", err))
+            .catch((err) => console.error("Failed to fetch image:", err))
             .finally(() => {
-              setLoading(prev => {
+              setLoading((prev) => {
                 const updated = [...prev];
                 updated[index] = false;
                 return updated;
@@ -64,7 +70,7 @@ export function GalleryRenderer({ component, onAction }: GalleryRendererProps) {
     });
 
     return () => {
-      debounceTimers.forEach(timer => clearTimeout(timer));
+      debounceTimers.forEach((timer) => clearTimeout(timer));
     };
   }, [images, loadedQueries, loading]);
 
@@ -79,13 +85,19 @@ export function GalleryRenderer({ component, onAction }: GalleryRendererProps) {
   return (
     <div className="space-y-4">
       {title && (
-        <h3 className="text-lg sm:text-xl font-semibold text-gray-900">{title}</h3>
+        <h3 className="text-lg sm:text-xl font-semibold text-gray-900">
+          {title}
+        </h3>
       )}
 
-      <div className={cn(
-        "grid gap-4",
-        gridColsClass[Math.min(3, Math.max(1, columns)) as keyof typeof gridColsClass]
-      )}>
+      <div
+        className={cn(
+          "grid gap-4",
+          gridColsClass[
+            Math.min(3, Math.max(1, columns)) as keyof typeof gridColsClass
+          ],
+        )}
+      >
         {images.map((img, index) => {
           const imageUrl = img.image || loadedImages[index];
           const isLoading = loading[index];
@@ -95,7 +107,7 @@ export function GalleryRenderer({ component, onAction }: GalleryRendererProps) {
               key={index}
               className={cn(
                 "group relative rounded-xl overflow-hidden bg-gray-50 cursor-pointer",
-                img.clickAction && onAction && "hover:shadow-xl transition-all"
+                img.clickAction && onAction && "hover:shadow-xl transition-all",
               )}
               style={{ aspectRatio }}
               onClick={() => {
@@ -117,7 +129,9 @@ export function GalleryRenderer({ component, onAction }: GalleryRendererProps) {
                     <div className="absolute inset-x-0 bottom-0 p-4 bg-gradient-to-t from-black/70 via-black/30 to-transparent">
                       <p className="text-white font-medium">{img.title}</p>
                       {img.subtitle && (
-                        <p className="text-white/80 text-sm mt-1">{img.subtitle}</p>
+                        <p className="text-white/80 text-sm mt-1">
+                          {img.subtitle}
+                        </p>
                       )}
                     </div>
                   )}

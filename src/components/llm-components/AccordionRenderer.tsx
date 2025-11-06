@@ -16,7 +16,12 @@ interface AccordionRendererProps {
   onFormChange?: (id: string, value: string) => void;
 }
 
-export function AccordionRenderer({ component, onAction, formValues, onFormChange }: AccordionRendererProps) {
+export function AccordionRenderer({
+  component,
+  onAction,
+  formValues,
+  onFormChange,
+}: AccordionRendererProps) {
   const { items = [], allowMultiple = false } = component;
 
   if (items.length === 0) return null;
@@ -26,10 +31,7 @@ export function AccordionRenderer({ component, onAction, formValues, onFormChang
     : { type: "single" as const, collapsible: true };
 
   return (
-    <Accordion
-      {...accordionProps}
-      className="w-full space-y-2"
-    >
+    <Accordion {...accordionProps} className="w-full space-y-2">
       {items.map((item, index) => (
         <AccordionItem
           key={index}

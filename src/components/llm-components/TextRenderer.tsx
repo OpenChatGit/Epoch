@@ -2,7 +2,12 @@ import { cn } from "@/lib/utils";
 import { TextComponent } from "./types";
 
 export function TextRenderer({ component }: { component: TextComponent }) {
-  const { text = "", variant = "body", align = "start", style = {} } = component;
+  const {
+    text = "",
+    variant = "body",
+    align = "start",
+    style = {},
+  } = component;
 
   if (!text) return null;
 
@@ -28,7 +33,8 @@ export function TextRenderer({ component }: { component: TextComponent }) {
     style?.italic && "italic",
     style?.underline && "underline underline-offset-2",
     style?.strike && "line-through",
-    style?.code && "font-mono bg-gray-100 px-2 py-1 rounded border border-gray-200",
+    style?.code &&
+      "font-mono bg-gray-100 px-2 py-1 rounded border border-gray-200",
   );
 
   const styleObj = style?.color ? { color: style.color } : undefined;

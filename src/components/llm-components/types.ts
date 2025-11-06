@@ -1,12 +1,24 @@
 export type TextVariant = "title" | "subtitle" | "body" | "caption" | "code";
 export type TextAlign = "start" | "center" | "end" | "justify";
 export type FlexAlign = "start" | "center" | "end" | "stretch";
-export type FlexJustify = "start" | "center" | "end" | "between" | "around" | "evenly";
+export type FlexJustify =
+  | "start"
+  | "center"
+  | "end"
+  | "between"
+  | "around"
+  | "evenly";
 export type ImageFit = "cover" | "contain" | "fill" | "none" | "scale-down";
 export type BulletType = "disc" | "circle" | "square" | "decimal" | "none";
 export type ButtonVariant = "primary" | "secondary" | "outline" | "ghost";
 export type ButtonSize = "sm" | "md" | "lg";
-export type InputType = "text" | "email" | "password" | "number" | "tel" | "url";
+export type InputType =
+  | "text"
+  | "email"
+  | "password"
+  | "number"
+  | "tel"
+  | "url";
 export type ChartType = "bar" | "line" | "area" | "pie";
 export type BadgeVariant = "default" | "success" | "warning" | "error" | "info";
 export type AlertVariant = "default" | "success" | "warning" | "error" | "info";

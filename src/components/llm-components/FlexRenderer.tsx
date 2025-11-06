@@ -9,7 +9,12 @@ interface FlexRendererProps {
   onFormChange?: (id: string, value: string) => void;
 }
 
-export function FlexRenderer({ component, onAction, formValues, onFormChange }: FlexRendererProps) {
+export function FlexRenderer({
+  component,
+  onAction,
+  formValues,
+  onFormChange,
+}: FlexRendererProps) {
   const {
     direction = "column",
     align = "stretch",
@@ -44,7 +49,7 @@ export function FlexRenderer({ component, onAction, formValues, onFormChange }: 
     directionClasses[direction],
     alignClasses[align],
     justifyClasses[justify],
-    wrap && "flex-wrap"
+    wrap && "flex-wrap",
   );
 
   return (

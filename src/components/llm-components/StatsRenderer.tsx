@@ -16,17 +16,21 @@ export function StatsRenderer({ component }: StatsRendererProps) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
       {items.map((item, index) => {
-        const trendIcon = item.trend === "up" ? (
-          <TrendingUp className="h-4 w-4" />
-        ) : item.trend === "down" ? (
-          <TrendingDown className="h-4 w-4" />
-        ) : item.trend === "neutral" ? (
-          <Minus className="h-4 w-4" />
-        ) : null;
+        const trendIcon =
+          item.trend === "up" ? (
+            <TrendingUp className="h-4 w-4" />
+          ) : item.trend === "down" ? (
+            <TrendingDown className="h-4 w-4" />
+          ) : item.trend === "neutral" ? (
+            <Minus className="h-4 w-4" />
+          ) : null;
 
-        const trendColor = item.trend === "up" ? "text-green-600" :
-                          item.trend === "down" ? "text-red-600" :
-                          "text-gray-500";
+        const trendColor =
+          item.trend === "up"
+            ? "text-green-600"
+            : item.trend === "down"
+              ? "text-red-600"
+              : "text-gray-500";
 
         return (
           <div
@@ -51,15 +55,15 @@ export function StatsRenderer({ component }: StatsRendererProps) {
                 </p>
               )}
               {(item.change || item.trend) && (
-                <div className={cn("flex items-center gap-1 text-sm", trendColor)}>
+                <div
+                  className={cn("flex items-center gap-1 text-sm", trendColor)}
+                >
                   {trendIcon}
                   {item.change && <span>{item.change}</span>}
                 </div>
               )}
               {item.description && (
-                <p className="text-xs text-gray-500 mt-2">
-                  {item.description}
-                </p>
+                <p className="text-xs text-gray-500 mt-2">{item.description}</p>
               )}
             </div>
           </div>

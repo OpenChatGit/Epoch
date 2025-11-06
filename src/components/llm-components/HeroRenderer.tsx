@@ -16,24 +16,38 @@ export function HeroRenderer({
   component,
   onAction,
   formValues,
-  onFormChange
+  onFormChange,
 }: HeroRendererProps) {
-  const { title, subtitle, backgroundImage, backgroundImageQuery, overlayColor = "rgba(0,0,0,0.4)", children = [] } = component;
-  const [imageUrl, setImageUrl] = useState<string | null>(backgroundImage || null);
+  const {
+    title,
+    subtitle,
+    backgroundImage,
+    backgroundImageQuery,
+    overlayColor = "rgba(0,0,0,0.4)",
+    children = [],
+  } = component;
+  const [imageUrl, setImageUrl] = useState<string | null>(
+    backgroundImage || null,
+  );
   const [loading, setLoading] = useState(false);
   const [loadedQuery, setLoadedQuery] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!backgroundImage && backgroundImageQuery && backgroundImageQuery.length >= 3 && backgroundImageQuery !== loadedQuery) {
+    if (
+      !backgroundImage &&
+      backgroundImageQuery &&
+      backgroundImageQuery.length >= 3 &&
+      backgroundImageQuery !== loadedQuery
+    ) {
       let cancelled = false;
 
       const debounceTimer = setTimeout(() => {
         const fetchImage = async () => {
           try {
             setLoading(true);
-            const res = await fetch('/api/search-image', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
+            const res = await fetch("/api/search-image", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ query: backgroundImageQuery }),
             });
             const data = await res.json();

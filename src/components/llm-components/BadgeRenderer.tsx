@@ -23,10 +23,7 @@ export function BadgeRenderer({ component }: BadgeRendererProps) {
 
   return (
     <Badge
-      className={cn(
-        "text-xs font-medium border",
-        variantClasses[variant]
-      )}
+      className={cn("text-xs font-medium border", variantClasses[variant])}
     >
       {text}
     </Badge>

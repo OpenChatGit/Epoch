@@ -18,8 +18,19 @@ interface SelectRendererProps {
   isInFlexRow?: boolean;
 }
 
-export function SelectRenderer({ component, value, onChange, isInFlexRow = false }: SelectRendererProps) {
-  const { id, label, placeholder = "Select an option", options, required = false } = component;
+export function SelectRenderer({
+  component,
+  value,
+  onChange,
+  isInFlexRow = false,
+}: SelectRendererProps) {
+  const {
+    id,
+    label,
+    placeholder = "Select an option",
+    options,
+    required = false,
+  } = component;
 
   if (!id || !options || options.length === 0) return null;
 
@@ -28,10 +39,7 @@ export function SelectRenderer({ component, value, onChange, isInFlexRow = false
   };
 
   return (
-    <div className={cn(
-      "space-y-2",
-      isInFlexRow && "flex-1 min-w-0"
-    )}>
+    <div className={cn("space-y-2", isInFlexRow && "flex-1 min-w-0")}>
       {label && (
         <Label htmlFor={id} className="text-sm font-medium text-gray-700">
           {label}
@@ -44,7 +52,7 @@ export function SelectRenderer({ component, value, onChange, isInFlexRow = false
         </SelectTrigger>
         <SelectContent>
           {options
-            .filter(option => option.value && option.value.trim() !== "")
+            .filter((option) => option.value && option.value.trim() !== "")
             .map((option, index) => (
               <SelectItem key={option.value || index} value={option.value!}>
                 {option.label || option.value}

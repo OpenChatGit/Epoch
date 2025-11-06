@@ -3,7 +3,6 @@
 import { CodeBlockComponent } from "./types";
 import { useState } from "react";
 import { Check, Copy } from "lucide-react";
-import { cn } from "@/lib/utils";
 
 interface CodeBlockRendererProps {
   component: CodeBlockComponent;

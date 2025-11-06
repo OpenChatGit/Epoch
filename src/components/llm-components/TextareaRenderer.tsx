@@ -12,7 +12,12 @@ interface TextareaRendererProps {
   isInFlexRow?: boolean;
 }
 
-export function TextareaRenderer({ component, value = "", onChange, isInFlexRow = false }: TextareaRendererProps) {
+export function TextareaRenderer({
+  component,
+  value = "",
+  onChange,
+  isInFlexRow = false,
+}: TextareaRendererProps) {
   const { id, label, placeholder, rows = 4, required = false } = component;
 
   if (!id) return null;
@@ -22,10 +27,7 @@ export function TextareaRenderer({ component, value = "", onChange, isInFlexRow 
   };
 
   return (
-    <div className={cn(
-      "space-y-2",
-      isInFlexRow && "flex-1 min-w-0"
-    )}>
+    <div className={cn("space-y-2", isInFlexRow && "flex-1 min-w-0")}>
       {label && (
         <Label htmlFor={id} className="text-sm font-medium text-gray-700">
           {label}

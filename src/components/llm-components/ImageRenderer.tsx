@@ -7,35 +7,32 @@ import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 
 const searchImage = async (query: string): Promise<string> => {
-  const res = await fetch('/api/search-image', {
-    method: 'POST',
+  const res = await fetch("/api/search-image", {
+    method: "POST",
     headers: {
-      'Content-Type': 'application/json',
+      "Content-Type": "application/json",
     },
     body: JSON.stringify({ query }),
   });
 
   if (!res.ok) {
-    throw new Error('Image search failed');
+    throw new Error("Image search failed");
   }
 
   const data = await res.json();
   return data.imageUrl;
-}
+};
 
 interface ImageRendererProps {
   component: ImageComponent;
   isInFlexRow?: boolean;
 }
 
-export function ImageRenderer({ component, isInFlexRow = false }: ImageRendererProps) {
-  const {
-    src,
-    searchQuery,
-    alt = "",
-    fit = "cover",
-    radius = 0,
-  } = component;
+export function ImageRenderer({
+  component,
+  isInFlexRow = false,
+}: ImageRendererProps) {
+  const { src, searchQuery, alt = "", fit = "cover", radius = 0 } = component;
 
   const [imageSrc, setImageSrc] = useState<string | null>(src || null);
   const [loading, setLoading] = useState(false);
@@ -43,7 +40,12 @@ export function ImageRenderer({ component, isInFlexRow = false }: ImageRendererP
   const [loadedQuery, setLoadedQuery] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!src && searchQuery && searchQuery.length >= 3 && searchQuery !== loadedQuery) {
+    if (
+      !src &&
+      searchQuery &&
+      searchQuery.length >= 3 &&
+      searchQuery !== loadedQuery
+    ) {
       let cancelled = false;
 
       const debounceTimer = setTimeout(() => {
@@ -75,9 +77,7 @@ export function ImageRenderer({ component, isInFlexRow = false }: ImageRendererP
     }
   }, [src, searchQuery, loadedQuery]);
 
-  const containerClass = isInFlexRow
-    ? "flex-1 min-w-0"
-    : "w-full";
+  const containerClass = isInFlexRow ? "flex-1 min-w-0" : "w-full";
 
   const fitClasses = {
     cover: isInFlexRow
@@ -89,9 +89,7 @@ export function ImageRenderer({ component, isInFlexRow = false }: ImageRendererP
     "scale-down": "object-scale-down w-full h-auto max-h-96",
   };
 
-  const skeletonClass = isInFlexRow
-    ? "w-full h-48"
-    : "w-full h-64";
+  const skeletonClass = isInFlexRow ? "w-full h-48" : "w-full h-64";
 
   if (loading) {
     return (
@@ -105,7 +103,10 @@ export function ImageRenderer({ component, isInFlexRow = false }: ImageRendererP
   if (error || !imageSrc) {
     return (
       <div
-        className={cn(skeletonClass, "bg-gray-100 flex items-center justify-center text-gray-400 text-sm")}
+        className={cn(
+          skeletonClass,
+          "bg-gray-100 flex items-center justify-center text-gray-400 text-sm",
+        )}
         style={{ borderRadius: `${radius}px` }}
       >
         Failed to load image
@@ -114,7 +115,10 @@ export function ImageRenderer({ component, isInFlexRow = false }: ImageRendererP
   }
 
   return (
-    <div className={cn("relative overflow-hidden", containerClass)} style={{ borderRadius: `${radius}px` }}>
+    <div
+      className={cn("relative overflow-hidden", containerClass)}
+      style={{ borderRadius: `${radius}px` }}
+    >
       <img
         src={imageSrc}
         alt={alt}

@@ -12,8 +12,19 @@ interface InputRendererProps {
   isInFlexRow?: boolean;
 }
 
-export function InputRenderer({ component, value = "", onChange, isInFlexRow = false }: InputRendererProps) {
-  const { id, label, placeholder, inputType = "text", required = false } = component;
+export function InputRenderer({
+  component,
+  value = "",
+  onChange,
+  isInFlexRow = false,
+}: InputRendererProps) {
+  const {
+    id,
+    label,
+    placeholder,
+    inputType = "text",
+    required = false,
+  } = component;
 
   if (!id) return null;
 
@@ -22,10 +33,7 @@ export function InputRenderer({ component, value = "", onChange, isInFlexRow = f
   };
 
   return (
-    <div className={cn(
-      "space-y-2",
-      isInFlexRow && "flex-1 min-w-0"
-    )}>
+    <div className={cn("space-y-2", isInFlexRow && "flex-1 min-w-0")}>
       {label && (
         <Label htmlFor={id} className="text-sm font-medium text-gray-700">
           {label}

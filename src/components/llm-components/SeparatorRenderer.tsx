@@ -10,10 +10,5 @@ interface SeparatorRendererProps {
 export function SeparatorRenderer({ component }: SeparatorRendererProps) {
   const { orientation = "horizontal" } = component;
 
-  return (
-    <Separator
-      orientation={orientation}
-      className="bg-gray-200"
-    />
-  );
+  return <Separator orientation={orientation} className="bg-gray-200" />;
 }

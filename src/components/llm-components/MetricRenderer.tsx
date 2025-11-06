@@ -17,7 +17,7 @@ export function MetricRenderer({ component }: MetricRendererProps) {
     prefix,
     suffix,
     description,
-    variant = "default"
+    variant = "default",
   } = component;
 
   if (!value) return null;
@@ -30,24 +30,29 @@ export function MetricRenderer({ component }: MetricRendererProps) {
     danger: "bg-red-50 border-red-200",
   };
 
-  const trendColor = trend === "up" ? "text-green-600" :
-                    trend === "down" ? "text-red-600" :
-                    "text-gray-500";
+  const trendColor =
+    trend === "up"
+      ? "text-green-600"
+      : trend === "down"
+        ? "text-red-600"
+        : "text-gray-500";
 
   return (
-    <div className={cn(
-      "rounded-xl border p-6 transition-all hover:shadow-md",
-      variantStyles[variant]
-    )}>
+    <div
+      className={cn(
+        "rounded-xl border p-6 transition-all hover:shadow-md",
+        variantStyles[variant],
+      )}
+    >
       {label && (
-        <p className="text-sm font-medium text-gray-600 mb-2">
-          {label}
-        </p>
+        <p className="text-sm font-medium text-gray-600 mb-2">{label}</p>
       )}
 
       <div className="flex items-baseline gap-2">
         <span className="text-3xl font-bold text-gray-900">
-          {prefix}{value}{suffix}
+          {prefix}
+          {value}
+          {suffix}
         </span>
 
         {(change || trend) && (
@@ -60,9 +65,7 @@ export function MetricRenderer({ component }: MetricRendererProps) {
       </div>
 
       {description && (
-        <p className="text-sm text-gray-500 mt-2">
-          {description}
-        </p>
+        <p className="text-sm text-gray-500 mt-2">{description}</p>
       )}
     </div>
   );

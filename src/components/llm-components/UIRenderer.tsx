@@ -166,12 +166,7 @@ export function UIRenderer({
         />
       );
     case "gallery":
-      return (
-        <GalleryRenderer
-          component={component}
-          onAction={onAction}
-        />
-      );
+      return <GalleryRenderer component={component} onAction={onAction} />;
     case "timeline":
       return (
         <TimelineRenderer

@@ -11,7 +11,12 @@ interface TabsRendererProps {
   onFormChange?: (id: string, value: string) => void;
 }
 
-export function TabsRenderer({ component, onAction, formValues, onFormChange }: TabsRendererProps) {
+export function TabsRenderer({
+  component,
+  onAction,
+  formValues,
+  onFormChange,
+}: TabsRendererProps) {
   const { tabs = [] } = component;
 
   if (tabs.length === 0) return null;
@@ -30,7 +35,11 @@ export function TabsRenderer({ component, onAction, formValues, onFormChange }: 
         ))}
       </TabsList>
       {tabs.map((tab, index) => (
-        <TabsContent key={index} value={`tab-${index}`} className="mt-4 space-y-4">
+        <TabsContent
+          key={index}
+          value={`tab-${index}`}
+          className="mt-4 space-y-4"
+        >
           {tab.content?.map((child, childIndex) => (
             <UIRenderer
               key={childIndex}
