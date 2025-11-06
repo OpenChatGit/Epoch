@@ -1,20 +1,30 @@
-import { jsonSchema, Output, tool, ToolLoopAgent } from "ai";
+import { jsonSchema, LanguageModel, Output, tool, ToolLoopAgent } from "ai";
 import { TextEncoder } from "util";
 import { z } from "zod";
 import { searchWeb } from "../../../lib/searchUtils";
-import { ollama } from "ollama-ai-provider-v2";
-import { openai } from "@ai-sdk/openai";
+import { createOllama } from "ollama-ai-provider-v2";
+import { createOpenAI } from "@ai-sdk/openai";
 import { staticSchema } from "@/lib/responseSchema";
 import { systemPrompt } from "@/lib/prompts";
 
 export const POST = async (request: Request) => {
   const body = await request.json();
-  const model =
-    process.env.USE_OPENAI === "true"
-      ? openai(process.env.MODEL_NAME || "gpt-4.1-mini")
-      : process.env.USE_OLLAMA === "true"
-        ? ollama(process.env.MODEL_NAME || "gpt-oss:120b-cloud")
-        : null;
+
+  let model: LanguageModel | null = null;
+
+  if (process.env.USE_OPENAI === "true") {
+    const openai = createOpenAI({
+      apiKey: process.env.OPENAI_API_KEY || "",
+    });
+
+    model = openai(process.env.MODEL_NAME || "gpt-4.1-mini");
+  } else if (process.env.USE_OLLAMA === "true") {
+    const ollama = createOllama({
+      baseURL: process.env.OLLAMA_API_URL || "http://localhost:11434/api",
+    });
+
+    model = ollama(process.env.MODEL_NAME || "gpt-oss:120b-cloud");
+  }
 
   if (!model) {
     return new Response(

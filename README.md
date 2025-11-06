@@ -76,8 +76,9 @@ mv .env.example .env
 
 ```env
 ....
-MODEL_NAME=llama3.2:3b 
+MODEL_NAME=llama3.2:3b
 USE_OLLAMA=true
+OLLAMA_BASE_URL=http://localhost:11434/api
 ...
 ```
 
