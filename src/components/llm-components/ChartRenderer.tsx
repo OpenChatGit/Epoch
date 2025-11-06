@@ -1,8 +1,15 @@
 "use client";
 
 import { ChartComponent } from "./types";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  ChartConfig,
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
@@ -20,7 +27,6 @@ import {
   YAxis,
   CartesianGrid,
   Cell,
-  ResponsiveContainer,
 } from "recharts";
 import { cn } from "@/lib/utils";
 
@@ -29,113 +35,190 @@ interface ChartRendererProps {
   isInFlexRow?: boolean;
 }
 
-export function ChartRenderer({ component, isInFlexRow = false }: ChartRendererProps) {
-  const {
-    chartType = "bar",
-    title,
-    description,
-    data,
-    config,
-  } = component;
+export function ChartRenderer({
+  component,
+  isInFlexRow = false,
+}: ChartRendererProps) {
+  const { chartType = "bar", title, description, data, config } = component;
 
-  if (!data || !config || !config.xKey || !config.yKeys || config.yKeys.length === 0) {
+  if (
+    !data ||
+    !config ||
+    !config.xKey ||
+    !config.yKeys ||
+    config.yKeys.length === 0
+  ) {
     return null;
   }
 
   const xKey = config.xKey;
   const yKeys = config.yKeys;
 
-  const chartConfig = yKeys.reduce((acc, yKey) => {
+  const chartConfig = yKeys.reduce((acc, yKey, index) => {
     if (!yKey.key) return acc;
     acc[yKey.key] = {
       label: yKey.label || yKey.key,
-      color: yKey.color || "#8884d8",
+      color: `var(--chart-${(index % 5) + 1})`,
     };
     return acc;
-  }, {} as Record<string, { label: string; color: string }>);
+  }, {} as ChartConfig);
+
+  const gradients = [
+    { id: "gradient1", from: "#ec4899", to: "#f97316" },
+    { id: "gradient2", from: "#14b8a6", to: "#06b6d4" },
+    { id: "gradient3", from: "#8b5cf6", to: "#d946ef" },
+    { id: "gradient4", from: "#0ea5e9", to: "#3b82f6" },
+    { id: "gradient5", from: "#f59e0b", to: "#eab308" },
+  ];
 
   const renderChart = () => {
     switch (chartType) {
       case "bar":
         return (
-          <ChartContainer config={chartConfig} className="h-[300px] w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={data}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                <XAxis
-                  dataKey={xKey}
-                  tick={{ fill: "#6b7280", fontSize: 12 }}
-                  stroke="#9ca3af"
-                />
-                <YAxis tick={{ fill: "#6b7280", fontSize: 12 }} stroke="#9ca3af" />
-                <ChartTooltip content={<ChartTooltipContent />} />
-                {yKeys.map((yKey) => (
-                  <Bar
-                    key={yKey.key}
-                    dataKey={yKey.key!}
-                    fill={yKey.color}
-                    radius={[4, 4, 0, 0]}
-                  />
+          <ChartContainer
+            config={chartConfig}
+            className="min-h-[300px] w-full shadow-none border-gray-200"
+          >
+            <BarChart accessibilityLayer data={data}>
+              <defs>
+                {gradients.map((gradient, index) => (
+                  <linearGradient
+                    key={gradient.id}
+                    id={gradient.id}
+                    x1="0"
+                    y1="0"
+                    x2="1"
+                    y2="1"
+                  >
+                    <stop
+                      offset="0%"
+                      stopColor={gradient.from}
+                      stopOpacity={0.9}
+                    />
+                    <stop
+                      offset="100%"
+                      stopColor={gradient.to}
+                      stopOpacity={0.7}
+                    />
+                  </linearGradient>
                 ))}
-              </BarChart>
-            </ResponsiveContainer>
+              </defs>
+              <CartesianGrid vertical={false} />
+              <XAxis
+                dataKey={xKey}
+                tickLine={false}
+                tickMargin={10}
+                axisLine={false}
+              />
+              <YAxis tickLine={false} tickMargin={10} axisLine={false} />
+              <ChartTooltip content={<ChartTooltipContent />} />
+              {yKeys.map((yKey, index) => (
+                <Bar
+                  key={yKey.key}
+                  dataKey={yKey.key!}
+                  fill={`url(#${gradients[index % gradients.length].id})`}
+                  radius={[4, 4, 0, 0]}
+                />
+              ))}
+            </BarChart>
           </ChartContainer>
         );
 
       case "line":
         return (
-          <ChartContainer config={chartConfig} className="h-[300px] w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={data}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                <XAxis
-                  dataKey={xKey}
-                  tick={{ fill: "#6b7280", fontSize: 12 }}
-                  stroke="#9ca3af"
-                />
-                <YAxis tick={{ fill: "#6b7280", fontSize: 12 }} stroke="#9ca3af" />
-                <ChartTooltip content={<ChartTooltipContent />} />
-                {yKeys.map((yKey) => (
-                  <Line
-                    key={yKey.key}
-                    type="monotone"
-                    dataKey={yKey.key!}
-                    stroke={yKey.color}
-                    strokeWidth={2}
-                    dot={{ fill: yKey.color, r: 4 }}
-                  />
+          <ChartContainer config={chartConfig} className="min-h-[300px] w-full">
+            <LineChart accessibilityLayer data={data}>
+              <defs>
+                {gradients.map((gradient, index) => (
+                  <linearGradient
+                    key={gradient.id}
+                    id={gradient.id}
+                    x1="0"
+                    y1="0"
+                    x2="1"
+                    y2="0"
+                  >
+                    <stop offset="0%" stopColor={gradient.from} />
+                    <stop offset="100%" stopColor={gradient.to} />
+                  </linearGradient>
                 ))}
-              </LineChart>
-            </ResponsiveContainer>
+              </defs>
+              <CartesianGrid vertical={false} />
+              <XAxis
+                dataKey={xKey}
+                tickLine={false}
+                tickMargin={10}
+                axisLine={false}
+              />
+              <YAxis tickLine={false} tickMargin={10} axisLine={false} />
+              <ChartTooltip content={<ChartTooltipContent />} />
+              {yKeys.map((yKey, index) => (
+                <Line
+                  key={yKey.key}
+                  type="monotone"
+                  dataKey={yKey.key!}
+                  stroke={`url(#${gradients[index % gradients.length].id})`}
+                  strokeWidth={3}
+                  dot={{
+                    fill: gradients[index % gradients.length].from,
+                    r: 5,
+                    strokeWidth: 2,
+                    stroke: "#fff",
+                  }}
+                />
+              ))}
+            </LineChart>
           </ChartContainer>
         );
 
       case "area":
         return (
-          <ChartContainer config={chartConfig} className="h-[300px] w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={data}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                <XAxis
-                  dataKey={xKey}
-                  tick={{ fill: "#6b7280", fontSize: 12 }}
-                  stroke="#9ca3af"
-                />
-                <YAxis tick={{ fill: "#6b7280", fontSize: 12 }} stroke="#9ca3af" />
-                <ChartTooltip content={<ChartTooltipContent />} />
-                {yKeys.map((yKey, index) => (
-                  <Area
-                    key={yKey.key}
-                    type="monotone"
-                    dataKey={yKey.key!}
-                    stroke={yKey.color}
-                    fill={yKey.color}
-                    fillOpacity={0.6}
-                    stackId={index === 0 ? "1" : undefined}
-                  />
+          <ChartContainer config={chartConfig} className="min-h-[300px] w-full">
+            <AreaChart accessibilityLayer data={data}>
+              <defs>
+                {gradients.map((gradient, index) => (
+                  <linearGradient
+                    key={gradient.id}
+                    id={gradient.id}
+                    x1="0"
+                    y1="0"
+                    x2="1"
+                    y2="1"
+                  >
+                    <stop
+                      offset="0%"
+                      stopColor={gradient.from}
+                      stopOpacity={0.8}
+                    />
+                    <stop
+                      offset="100%"
+                      stopColor={gradient.to}
+                      stopOpacity={0.1}
+                    />
+                  </linearGradient>
                 ))}
-              </AreaChart>
-            </ResponsiveContainer>
+              </defs>
+              <CartesianGrid vertical={false} />
+              <XAxis
+                dataKey={xKey}
+                tickLine={false}
+                tickMargin={10}
+                axisLine={false}
+              />
+              <YAxis tickLine={false} tickMargin={10} axisLine={false} />
+              <ChartTooltip content={<ChartTooltipContent />} />
+              {yKeys.map((yKey, index) => (
+                <Area
+                  key={yKey.key}
+                  type="monotone"
+                  dataKey={yKey.key!}
+                  stroke={gradients[index % gradients.length].from}
+                  strokeWidth={2}
+                  fill={`url(#${gradients[index % gradients.length].id})`}
+                  stackId={index === 0 ? "1" : undefined}
+                />
+              ))}
+            </AreaChart>
           </ChartContainer>
         );
 
@@ -143,34 +226,44 @@ export function ChartRenderer({ component, isInFlexRow = false }: ChartRendererP
         const firstYKey = yKeys[0].key;
         if (!firstYKey) return null;
 
-        const pieData = data.map((item) => ({
+        const pieData = data.map((item, index) => ({
           name: item[xKey] as string,
           value: item[firstYKey] as number,
+          fill: `url(#pie-gradient-${index})`,
         }));
 
         return (
-          <ChartContainer config={chartConfig} className="h-[300px] w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <ChartTooltip content={<ChartTooltipContent />} />
-                <Pie
-                  data={pieData}
-                  dataKey="value"
-                  nameKey="name"
-                  cx="50%"
-                  cy="50%"
-                  outerRadius={100}
-                  label
-                >
-                  {pieData.map((_entry, index) => (
-                    <Cell
-                      key={`cell-${index}`}
-                      fill={yKeys[index % yKeys.length]?.color || "#8884d8"}
-                    />
-                  ))}
-                </Pie>
-              </PieChart>
-            </ResponsiveContainer>
+          <ChartContainer config={chartConfig} className="min-h-[300px] w-full">
+            <PieChart>
+              <defs>
+                {pieData.map((_, index) => {
+                  const gradient = gradients[index % gradients.length];
+                  return (
+                    <linearGradient
+                      key={`pie-gradient-${index}`}
+                      id={`pie-gradient-${index}`}
+                      x1="0"
+                      y1="0"
+                      x2="1"
+                      y2="1"
+                    >
+                      <stop offset="0%" stopColor={gradient.from} />
+                      <stop offset="100%" stopColor={gradient.to} />
+                    </linearGradient>
+                  );
+                })}
+              </defs>
+              <ChartTooltip content={<ChartTooltipContent />} />
+              <Pie
+                data={pieData}
+                dataKey="value"
+                nameKey="name"
+                cx="50%"
+                cy="50%"
+                outerRadius={100}
+                label
+              />
+            </PieChart>
           </ChartContainer>
         );
 
@@ -180,19 +273,20 @@ export function ChartRenderer({ component, isInFlexRow = false }: ChartRendererP
   };
 
   return (
-    <Card className={cn(
-      "shadow-sm border-gray-200",
-      isInFlexRow ? "flex-1 min-w-0" : "w-full"
-    )}>
+    <Card
+      className={cn("shadow-sm", isInFlexRow ? "flex-1 min-w-0" : "w-full")}
+    >
       {(title || description) && (
         <CardHeader>
-          {title && <CardTitle className="text-lg font-semibold">{title}</CardTitle>}
+          {title && (
+            <CardTitle className="text-lg font-semibold">{title}</CardTitle>
+          )}
           {description && (
-            <CardDescription className="text-sm text-gray-500">{description}</CardDescription>
+            <CardDescription className="text-sm">{description}</CardDescription>
           )}
         </CardHeader>
       )}
-      <CardContent className="pt-4">{renderChart()}</CardContent>
+      <CardContent>{renderChart()}</CardContent>
     </Card>
   );
 }
