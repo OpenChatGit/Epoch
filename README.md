@@ -19,6 +19,7 @@ This architecture transforms LLMs from text generators into interface compilers,
 - **Stateful Conversational Context**: All user interactions (button clicks, form submissions, card selections) are serialized and fed back into the conversation history
 - **Recursive Rendering Engine**: UIRenderer recursively traverses component trees, maintaining form state and action handlers through the entire tree depth
 - **Integrated Search**: Serper API integration for real-time web search and image retrieval directly within generated interfaces
+- **Local LLM Support**: Run completely offline with Ollama integration - no API costs, full privacy, and support for Llama, Mistral, Qwen, and other open-source models
 
 ## Available Components
 
@@ -45,18 +46,22 @@ Epoch supports a wide range of UI components:
 ### Prerequisites
 
 - Node.js 18+
-- LLM API key (currently supports OpenAI)
-- Serper API key from [serper.dev](https://serper.dev) for web and image search (SearxNG capibilities coming soon)
+- **One of the following**:
+  - OpenAI API key (for cloud-based models)
+  - [Ollama](https://ollama.ai) installed locally (for local LLMs - **recommended for privacy and cost savings**)
+- Serper API key from [serper.dev](https://serper.dev) for web and image search (SearxNG capabilities coming soon)
 
 ### Setup
 
 1. Clone the repository:
+
 ```bash
 git clone https://github.com/itzcrazykns/epoch.git
 cd epoch
 ```
 
 2. Rename the environment file and configure it:
+
 ```bash
 # On Windows
 ren .env.example .env
@@ -65,23 +70,42 @@ ren .env.example .env
 mv .env.example .env
 ```
 
-3. Open `.env` and fill in your API keys as written in the file:
+3. Open `.env` and configure your setup:
+
+**Option A: Using Ollama (Local, Private, Free)**
+
 ```env
+....
+MODEL_NAME=llama3.2:3b 
+USE_OLLAMA=true
+...
+```
+
+**Option B: Using OpenAI (Cloud-based)**
+
+```env
+...
+MODEL_NAME=gpt-5-mini
+
+USE_OPENAI=true
 OPENAI_API_KEY=your_api_key_here
-SERPER_API_KEY=your_serper_api_key_here  # Get from serper.dev
+...
 ```
 
 4. Install dependencies:
+
 ```bash
 npm install
 ```
 
 5. Build the project:
+
 ```bash
 npm run build
 ```
 
 6. Start the application:
+
 ```bash
 npm run start
 ```
@@ -118,11 +142,11 @@ npm run dev
   - File upload and preview
   - Drag-and-drop interfaces
 
-- **Local Model Support**
-  - Ollama integration for local LLMs
-  - LM Studio support
+- **Extended Model Support**
+  - LM Studio integration
   - Custom model endpoints
-  - Offline-first architecture
+  - Anthropic Claude support
+  - Google Gemini integration
 
 - **Web Search Integration**
   - SearXNG support for privacy-focused web search
