@@ -9,6 +9,7 @@ import { systemPrompt } from "@/lib/prompts";
 
 export const POST = async (request: Request) => {
   const body = await request.json();
+  const selectedModel = body.model;
 
   let model: LanguageModel | null = null;
 
@@ -17,13 +18,13 @@ export const POST = async (request: Request) => {
       apiKey: process.env.OPENAI_API_KEY || "",
     });
 
-    model = openai(process.env.MODEL_NAME || "gpt-4.1-mini");
+    model = openai(selectedModel || process.env.MODEL_NAME || "gpt-4.1-mini");
   } else if (process.env.USE_OLLAMA === "true") {
     const ollama = createOllama({
       baseURL: process.env.OLLAMA_API_URL || "http://localhost:11434/api",
     });
 
-    model = ollama(process.env.MODEL_NAME || "gpt-oss:120b-cloud");
+    model = ollama(selectedModel || process.env.MODEL_NAME || "llama3.2");
   }
 
   if (!model) {

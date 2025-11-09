@@ -6,6 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { ArrowUp } from "lucide-react";
 import { UIRenderer, ResponseRoot } from "@/components/llm-components";
+import { ModelSelector } from "@/components/ModelSelector";
 
 interface Message {
   role: "user" | "assistant";
@@ -24,6 +25,7 @@ export default function Home() {
   const [currentStreamingResponse, setCurrentStreamingResponse] =
     useState<ResponseRoot | null>(null);
   const [formValues, setFormValues] = useState<Record<string, string>>({});
+  const [selectedModel, setSelectedModel] = useState("");
 
   const streamResponse = async (userMessage: string) => {
     setIsStreaming(true);
@@ -50,7 +52,10 @@ export default function Home() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ messages: apiMessages }),
+        body: JSON.stringify({ 
+          messages: apiMessages,
+          model: selectedModel 
+        }),
       });
 
       if (!response.ok) {
@@ -156,7 +161,7 @@ export default function Home() {
   };
 
   return (
-    <div className="bg-white min-h-screen w-screen">
+    <div className="bg-white w-full pt-1">
       <div className="max-w-3xl mx-auto flex flex-col space-y-6 md:space-y-10 mt-6 md:mt-10 pb-32 md:pb-40 px-4 md:px-0">
         {messages.map((message, index) => (
           <div key={index}>
@@ -224,23 +229,31 @@ export default function Home() {
       <div className="fixed bottom-0 left-0 right-0 max-w-[802px] mx-auto px-4 md:px-0">
         <div className="absolute bottom-full left-0 right-0 h-8 bg-gradient-to-t from-white to-transparent pointer-events-none"></div>
         <div className="bg-white pt-1 pb-6 md:pb-8">
-          <div className="flex items-center gap-2 rounded-xl bg-gray-50 border border-gray-200 pr-2 pl-3 py-2.5">
+          <div className="rounded-xl bg-gray-50 border border-gray-200 p-3">
+            {/* Input Area */}
             <Textarea
               rows={1}
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
               disabled={isStreaming}
-              className="flex-1 resize-none text-sm bg-transparent border-0 shadow-none py-0 px-0 placeholder:font-[490] placeholder:text-gray-400 text-gray-700 max-h-32 overflow-y-auto leading-relaxed"
+              className="w-full resize-none text-sm bg-transparent border-0 shadow-none py-0 px-0 placeholder:font-[490] placeholder:text-gray-400 text-gray-700 max-h-32 overflow-y-auto leading-relaxed"
               placeholder="Ask anything..."
             />
-            <button
-              onClick={handleSend}
-              disabled={isStreaming || !input.trim()}
-              className="bg-gradient-to-br from-pink-500 to-yellow-500 text-white p-2 rounded-full text-sm font-medium shadow-sm hover:opacity-90 transition duration-200 cursor-pointer shrink-0 self-end disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <ArrowUp size={13} />
-            </button>
+            
+            {/* Button Bar */}
+            <div className="flex items-center justify-end gap-2 mt-3">
+              <ModelSelector value={selectedModel} onChange={setSelectedModel} />
+              
+              <button
+                onClick={handleSend}
+                disabled={isStreaming || !input.trim()}
+                className="bg-gradient-to-br from-pink-500 to-yellow-500 text-white px-4 py-2 rounded-lg text-sm font-medium shadow-sm hover:opacity-90 transition duration-200 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              >
+                <span>Send</span>
+                <ArrowUp size={14} />
+              </button>
+            </div>
           </div>
         </div>
       </div>
