@@ -266,46 +266,32 @@ Use markdown formatting for better readability.`;
           if (hasTools && toolResults.length > 0) {
             console.log('[BACKEND] Starting continuation stream with tool results');
             
-            // Build continuation messages with tool results
-            const continuationMessages = [
-              ...body.messages,
-              {
-                role: 'assistant' as const,
-                content: `I've received the search results. Let me analyze them and provide a clear answer.`
-              }
-            ];
+            // Build continuation messages - don't add assistant message, let model respond fresh
+            const continuationMessages = body.messages;
             
-            // Second call - continue with tool results
+            // Second call - continue with tool results  
             const continueResult = await streamText({
               model: model,
-              system: `Today is ${dateString}. Your training data is outdated - trust the search results.
+              system: `Search results:
+${toolResults.map(r => r.output).join('\n\n')}
 
-Search results (CURRENT as of ${dateString}):
-${toolResults.map(r => `${r.toolName}: ${r.output}`).join('\n\n')}
-
-Instructions:
-1. Keep your analysis BRIEF (2-3 sentences max in <think></think> tags)
-2. Look for version numbers (format: v0.0.0 or 0.0.0)
-3. Trust official sources (marked with ⭐) - especially GitHub releases
-4. Provide a clear, direct answer with the version number
-
-Don't overthink. Don't question the dates. Just extract the version and answer.
-
-Use markdown formatting.`,
+Answer the user's question based on these results. Use markdown formatting.`,
               messages: continuationMessages,
-              temperature: 0.7, // Lower temperature for more focused responses
+              temperature: 0.7,
             });
             
-            // Stream the continuation - reasoning continues from first stream
+            // Stream the continuation - reasoning tag is still open from first stream
             let continuationBuffer = '';
-            let inContinuationReasoningTag = true; // ASSUME reasoning tag is still open from first stream
+            let inContinuationReasoningTag = true; // Reasoning tag is still open from first stream
             let continuationReasoningBuffer = '';
-            let continuationTagName = 'think'; // Assume it was a <think> tag
+            let continuationTagName = 'think'; // Assume it was <think>
             let continuationReasoningPhase = true; // Start in reasoning phase
             let hasSeenContinuationTag = false;
+            let hasSeenAnyText = false;
             
             for await (const chunk of continueResult.fullStream) {
               if (chunk.type === 'text-delta') {
+                hasSeenAnyText = true;
                 continuationBuffer += chunk.text;
                 
                 // Process for reasoning tags in continuation
@@ -317,13 +303,13 @@ Use markdown formatting.`,
                       hasSeenContinuationTag = true;
                       const beforeTag = continuationBuffer.substring(0, openMatch.index);
                       if (beforeTag) {
-                        // Text before tag - if still in reasoning phase, send as reasoning
-                        const type = continuationReasoningPhase ? 'reasoning' : 'text';
-                        const data = `data: ${JSON.stringify({ type, content: beforeTag })}\n\n`;
+                        // Text before tag - send as text (final answer)
+                        const data = `data: ${JSON.stringify({ type: 'text', content: beforeTag })}\n\n`;
                         controller.enqueue(encoder.encode(data));
                       }
                       
                       inContinuationReasoningTag = true;
+                      continuationReasoningPhase = true;
                       continuationTagName = openMatch[1];
                       continuationBuffer = continuationBuffer.substring(openMatch.index! + openMatch[0].length);
                       continuationReasoningBuffer = '';
@@ -334,16 +320,16 @@ Use markdown formatting.`,
                       if (possiblePartialTag) {
                         const safeText = continuationBuffer.substring(0, possiblePartialTag.index);
                         if (safeText) {
-                          // If no tag seen yet, treat as reasoning continuation
-                          const type = (!hasSeenContinuationTag && continuationReasoningPhase) ? 'reasoning' : 'text';
+                          // Send based on phase
+                          const type = continuationReasoningPhase ? 'reasoning' : 'text';
                           const data = `data: ${JSON.stringify({ type, content: safeText })}\n\n`;
                           controller.enqueue(encoder.encode(data));
                         }
                         continuationBuffer = continuationBuffer.substring(possiblePartialTag.index!);
                         break;
                       } else {
-                        // All is text or reasoning
-                        const type = (!hasSeenContinuationTag && continuationReasoningPhase) ? 'reasoning' : 'text';
+                        // Send based on phase
+                        const type = continuationReasoningPhase ? 'reasoning' : 'text';
                         const data = `data: ${JSON.stringify({ type, content: continuationBuffer })}\n\n`;
                         controller.enqueue(encoder.encode(data));
                         continuationBuffer = '';
@@ -368,11 +354,11 @@ Use markdown formatting.`,
                       }
                       
                       inContinuationReasoningTag = false;
-                      continuationReasoningPhase = false; // After closing tag, switch to text mode
+                      continuationReasoningPhase = false; // After closing tag, everything is text (final answer)
                       continuationBuffer = continuationBuffer.substring(closeMatch.index! + closeMatch[0].length);
                       continuationReasoningBuffer = '';
                       continuationTagName = '';
-                      console.log('[BACKEND] Switched to text mode after closing tag');
+                      console.log('[BACKEND] Closed reasoning tag, switched to text mode');
                     } else {
                       // Check for partial closing tag
                       const possiblePartialClose = continuationBuffer.match(new RegExp(`<(/${continuationTagName.substring(0, Math.min(continuationBuffer.length, continuationTagName.length))})?$`, 'i'));
@@ -407,12 +393,12 @@ Use markdown formatting.`,
             // Flush continuation buffer
             if (continuationBuffer) {
               if (inContinuationReasoningTag) {
+                // Still in reasoning tag - send as reasoning
                 const data = `data: ${JSON.stringify({ type: 'reasoning', content: continuationBuffer })}\n\n`;
                 controller.enqueue(encoder.encode(data));
               } else {
-                // If no tag was seen, treat remaining as reasoning, otherwise as text
-                const type = (!hasSeenContinuationTag && continuationReasoningPhase) ? 'reasoning' : 'text';
-                const data = `data: ${JSON.stringify({ type, content: continuationBuffer })}\n\n`;
+                // After closing tag - send as text (final answer)
+                const data = `data: ${JSON.stringify({ type: 'text', content: continuationBuffer })}\n\n`;
                 controller.enqueue(encoder.encode(data));
               }
             }
