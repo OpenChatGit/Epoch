@@ -86,7 +86,7 @@ OLLAMA_API_URL=http://localhost:11434/api
 
 ```env
 ...
-MODEL_NAME=gpt-5-mini
+MODEL_NAME=gpt-4o-mini
 
 USE_OPENAI=true
 OPENAI_API_KEY=your_api_key_here

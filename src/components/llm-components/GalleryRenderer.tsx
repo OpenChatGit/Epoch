@@ -35,17 +35,48 @@ export function GalleryRenderer({ component, onAction }: GalleryRendererProps) {
             return updated;
           });
 
-          fetch("/api/search-image", {
+          // Get API key from localStorage
+          let apiKey: string | undefined;
+          try {
+            const settings = localStorage.getItem('epoch_provider_settings');
+            if (settings) {
+              const parsed = JSON.parse(settings);
+              apiKey = parsed.serperApiKey;
+            }
+          } catch (e) {
+            console.warn('Failed to get API key from settings');
+          }
+
+          if (!apiKey) {
+            console.error('Serper API key not configured');
+            setLoading((prev) => {
+              const updated = [...prev];
+              updated[index] = false;
+              return updated;
+            });
+            return;
+          }
+
+          // Call Serper API directly from client
+          fetch("https://google.serper.dev/images", {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ query: img.imageQuery }),
+            headers: {
+              "X-API-KEY": apiKey,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ q: img.imageQuery }),
           })
-            .then((res) => res.json())
-            .then((data) => {
-              if (data.imageUrl) {
+            .then((res) => {
+              if (!res.ok) {
+                throw new Error(`Image search failed: ${res.statusText}`);
+              }
+              return res.json();
+            })
+            .then(async (data) => {
+              if (data.images && data.images.length > 0) {
                 setLoadedImages((prev) => {
                   const updated = [...prev];
-                  updated[index] = data.imageUrl;
+                  updated[index] = data.images[0].imageUrl;
                   return updated;
                 });
                 setLoadedQueries((prev) => {
@@ -53,6 +84,10 @@ export function GalleryRenderer({ component, onAction }: GalleryRendererProps) {
                   updated[index] = img.imageQuery!;
                   return updated;
                 });
+                
+                // Track usage
+                const { trackImageSearch } = await import("@/lib/searchUsageTracker");
+                trackImageSearch();
               }
             })
             .catch((err) => console.error("Failed to fetch image:", err))

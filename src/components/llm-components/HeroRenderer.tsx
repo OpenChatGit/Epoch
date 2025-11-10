@@ -45,15 +45,46 @@ export function HeroRenderer({
         const fetchImage = async () => {
           try {
             setLoading(true);
-            const res = await fetch("/api/search-image", {
+            
+            // Get API key from localStorage
+            let apiKey: string | undefined;
+            try {
+              const settings = localStorage.getItem('epoch_provider_settings');
+              if (settings) {
+                const parsed = JSON.parse(settings);
+                apiKey = parsed.serperApiKey;
+              }
+            } catch (e) {
+              console.warn('Failed to get API key from settings');
+            }
+            
+            if (!apiKey) {
+              console.error('Serper API key not configured');
+              return;
+            }
+            
+            // Call Serper API directly from client
+            const res = await fetch("https://google.serper.dev/images", {
               method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ query: backgroundImageQuery }),
+              headers: {
+                "X-API-KEY": apiKey,
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({ q: backgroundImageQuery }),
             });
+            
+            if (!res.ok) {
+              throw new Error(`Image search failed: ${res.statusText}`);
+            }
+            
             const data = await res.json();
-            if (!cancelled && data.imageUrl) {
-              setImageUrl(data.imageUrl);
+            if (!cancelled && data.images && data.images.length > 0) {
+              setImageUrl(data.images[0].imageUrl);
               setLoadedQuery(backgroundImageQuery);
+              
+              // Track usage
+              const { trackImageSearch } = await import("@/lib/searchUsageTracker");
+              trackImageSearch();
             }
           } catch (err) {
             console.error("Failed to fetch image:", err);

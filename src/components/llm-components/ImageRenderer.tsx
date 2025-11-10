@@ -5,22 +5,48 @@ import Image from "next/image";
 import { ImageComponent } from "./types";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
+import { trackImageSearch } from "@/lib/searchUsageTracker";
 
 const searchImage = async (query: string): Promise<string> => {
-  const res = await fetch("/api/search-image", {
+  // Get API key from localStorage
+  let apiKey: string | undefined;
+  try {
+    const settings = localStorage.getItem('epoch_provider_settings');
+    if (settings) {
+      const parsed = JSON.parse(settings);
+      apiKey = parsed.serperApiKey;
+    }
+  } catch (e) {
+    console.warn('Failed to get API key from settings');
+  }
+
+  if (!apiKey) {
+    throw new Error("Serper API key not configured. Please add it in Settings → Web Search.");
+  }
+
+  // Call Serper API directly from client
+  const res = await fetch("https://google.serper.dev/images", {
     method: "POST",
     headers: {
+      "X-API-KEY": apiKey,
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ query }),
+    body: JSON.stringify({ q: query }),
   });
 
   if (!res.ok) {
-    throw new Error("Image search failed");
+    throw new Error(`Image search failed: ${res.statusText}`);
   }
 
   const data = await res.json();
-  return data.imageUrl;
+  
+  if (data.images && data.images.length > 0) {
+    // Track usage
+    trackImageSearch();
+    return data.images[0].imageUrl;
+  }
+  
+  throw new Error("No images found");
 };
 
 interface ImageRendererProps {

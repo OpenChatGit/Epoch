@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import { TitleBar } from "@/components/TitleBar";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -29,8 +28,7 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased overflow-hidden h-screen flex flex-col`}
         suppressHydrationWarning
       >
-        <TitleBar />
-        <main className="flex-1 overflow-y-auto overflow-x-hidden">{children}</main>
+        {children}
       </body>
     </html>
   );
