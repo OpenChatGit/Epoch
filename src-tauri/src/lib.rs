@@ -64,7 +64,7 @@ async fn get_serper_usage(api_key: String) -> Result<SerperUsageResult, String> 
     // Serper API returns "balance" (remaining credits) and "rateLimit" (requests per second)
     // We need to calculate used credits if we have a limit
     let balance = usage.balance.unwrap_or(0);
-    let rate_limit = usage.rate_limit.unwrap_or(0);
+    let _rate_limit = usage.rate_limit.unwrap_or(0);
     
     // For free tier: 2500 credits/month
     // Determine plan and limit based on balance

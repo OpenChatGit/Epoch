@@ -20,11 +20,13 @@ export function TitleBar({ tabs, activeTabId, onTabSelect, onNewTab, onDeleteTab
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [usageStats, setUsageStats] = useState<ApiUsageStats | null>(null);
+  const [serperCreditsUsed, setSerperCreditsUsed] = useState<number | null>(null);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     setMounted(true);
     setUsageStats(getUsageStats());
+    fetchSerperUsage();
   }, []);
 
   useEffect(() => {
@@ -40,13 +42,34 @@ export function TitleBar({ tabs, activeTabId, onTabSelect, onNewTab, onDeleteTab
     checkTauri();
   }, []);
 
+  // Fetch real Serper usage from API
+  const fetchSerperUsage = async () => {
+    try {
+      const { getProviderSettings } = await import('@/lib/settingsStore');
+      const settings = getProviderSettings();
+      
+      if (!settings.serperApiKey) return;
+      
+      const result = await invoke<any>('get_serper_usage', {
+        apiKey: settings.serperApiKey,
+      });
+      
+      if (result.success && result.credits_used) {
+        setSerperCreditsUsed(result.credits_used);
+      }
+    } catch (error) {
+      // Silently fail - not critical for title bar
+    }
+  };
+
   // Update usage stats periodically
   useEffect(() => {
     if (!mounted) return;
     
     const interval = setInterval(() => {
       setUsageStats(getUsageStats());
-    }, 2000);
+      fetchSerperUsage(); // Also refresh real API usage
+    }, 5000); // Every 5 seconds
     
     return () => clearInterval(interval);
   }, [mounted]);
@@ -111,16 +134,30 @@ export function TitleBar({ tabs, activeTabId, onTabSelect, onNewTab, onDeleteTab
         </div>
         
         {/* Serper API Usage Indicator */}
-        {mounted && usageStats && (usageStats.totalSearches > 0 || usageStats.totalImageSearches > 0) && (
+        {mounted && (serperCreditsUsed !== null || (usageStats && (usageStats.totalSearches > 0 || usageStats.totalImageSearches > 0))) && (
           <div className="flex items-center gap-2 text-xs text-foreground/50 pointer-events-none">
             <Search className="h-3.5 w-3.5" />
-            <span>
-              {usageStats.totalSearches + usageStats.totalImageSearches} searches
-            </span>
-            <span className="text-foreground/30">•</span>
-            <span className="text-pink-600">
-              ${usageStats.estimatedCost.toFixed(2)}
-            </span>
+            {serperCreditsUsed !== null ? (
+              <>
+                <span>
+                  {serperCreditsUsed} credits used
+                </span>
+                <span className="text-foreground/30">•</span>
+                <span className="text-pink-600">
+                  ${(serperCreditsUsed * 0.005).toFixed(2)}
+                </span>
+              </>
+            ) : usageStats && (
+              <>
+                <span>
+                  {usageStats.totalSearches + usageStats.totalImageSearches} searches
+                </span>
+                <span className="text-foreground/30">•</span>
+                <span className="text-pink-600">
+                  ${usageStats.estimatedCost.toFixed(2)}
+                </span>
+              </>
+            )}
           </div>
         )}
       </div>

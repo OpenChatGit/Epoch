@@ -11,6 +11,8 @@ import { ClientLayout } from "@/components/ClientLayout";
 import { ModeToggle } from "@/components/ModeToggle";
 import { getProviderSettings } from "@/lib/settingsStore";
 import { useToast } from "@/hooks/useToast";
+import { ReasoningIndicator } from "@/components/ReasoningIndicator";
+import { MarkdownRenderer } from "@/components/MarkdownRenderer";
 import {
   loadChatTabs,
   saveChatTabs,
@@ -32,6 +34,8 @@ export default function Home() {
   const [currentStreamingResponse, setCurrentStreamingResponse] =
     useState<ResponseRoot | null>(null);
   const [currentStreamingText, setCurrentStreamingText] = useState("");
+  const [currentReasoning, setCurrentReasoning] = useState("");
+  const [isReasoningComplete, setIsReasoningComplete] = useState(false);
   const [formValues, setFormValues] = useState<Record<string, string>>({});
   const [selectedModel, setSelectedModel] = useState("");
   const [mode, setMode] = useState<'ask' | 'agent'>('ask');
@@ -123,9 +127,12 @@ export default function Home() {
     setIsStreaming(true);
     setCurrentStreamingResponse(null);
     setCurrentStreamingText("");
+    setCurrentReasoning("");
+    setIsReasoningComplete(false);
 
     let latestResponse: ResponseRoot | null = null;
     let textResponse = "";
+    let reasoningResponse = "";
 
     const apiMessages = currentMessages.map((msg) => ({
       role: msg.role,
@@ -192,12 +199,15 @@ export default function Home() {
             const data = line.slice(6);
 
             if (data === "[DONE]") {
-              if (mode === 'ask' && textResponse) {
+              if (mode === 'ask') {
+                // Save message - backend already filtered reasoning tags
+                const content = textResponse || "No response generated.";
                 updateTabMessages(tabId, [
                   ...currentMessages,
                   {
                     role: "assistant",
-                    content: textResponse,
+                    content: content,
+                    reasoning: reasoningResponse || undefined,
                   },
                 ]);
               } else if (mode === 'agent' && latestResponse) {
@@ -211,6 +221,9 @@ export default function Home() {
                 ]);
               }
               setCurrentStreamingResponse(null);
+              setCurrentStreamingText("");
+              setCurrentReasoning("");
+              setIsReasoningComplete(false);
               setIsStreaming(false);
               setFormValues({});
               return;
@@ -219,10 +232,35 @@ export default function Home() {
             try {
               const parsed = JSON.parse(data);
               
-              if (mode === 'ask' && parsed.type === 'text') {
-                // Handle text streaming for Ask mode
-                textResponse += parsed.content;
-                setCurrentStreamingText(textResponse);
+              if (mode === 'ask') {
+                if (parsed.type === 'reasoning') {
+                  // Handle reasoning stream - backend already filtered tags
+                  console.log('[REASONING CHUNK]', parsed.content.substring(0, 50));
+                  reasoningResponse += parsed.content;
+                  setCurrentReasoning(reasoningResponse);
+                  
+                  // Track tool usage for API cost tracking
+                  if (parsed.content.includes('Using search tool')) {
+                    // Import and track web search
+                    import('@/lib/searchUsageTracker').then(({ trackWebSearch }) => {
+                      trackWebSearch();
+                    });
+                  } else if (parsed.content.includes('Using searchImage tool')) {
+                    // Import and track image search
+                    import('@/lib/searchUsageTracker').then(({ trackImageSearch }) => {
+                      trackImageSearch();
+                    });
+                  }
+                } else if (parsed.type === 'reasoning_complete') {
+                  // Mark reasoning as complete
+                  console.log('[REASONING COMPLETE]');
+                  setIsReasoningComplete(true);
+                } else if (parsed.type === 'text') {
+                  // Handle text streaming - backend already filtered reasoning
+                  console.log('[TEXT CHUNK]', parsed.content);
+                  textResponse += parsed.content;
+                  setCurrentStreamingText(textResponse);
+                }
               } else if (mode === 'agent') {
                 // Handle JSON streaming for Agent mode
                 latestResponse = parsed as ResponseRoot;
@@ -253,6 +291,9 @@ export default function Home() {
           content: "Sorry, an error occurred while processing your request.",
         },
       ]);
+      setCurrentStreamingText("");
+      setCurrentReasoning("");
+      setIsReasoningComplete(false);
       setIsStreaming(false);
       setCurrentStreamingResponse(null);
     }
@@ -261,6 +302,7 @@ export default function Home() {
   const handleSend = async () => {
     if (!input.trim() || isStreaming) return;
 
+    console.log('[SEND] Sending message:', input.substring(0, 30));
     const userMessage = input.trim();
     setInput("");
 
@@ -375,62 +417,108 @@ export default function Home() {
                 </div>
               </div>
             ) : (
-              <div className="flex flex-row space-x-2 md:-translate-x-6">
-                <Avatar className="size-6 mt-4 shrink-0">
-                  <div className="bg-linear-to-br from-pink-500 to-yellow-500 h-8 w-8 rounded-full"></div>
-                </Avatar>
-                <Card className="flex-1 shadow-none bg-gray-50 border-gray-200 min-w-0">
-                  <CardContent className="text-gray-600 text-sm font-[450] px-3 md:px-5">
-                    {typeof message.content === "string" ? (
-                      <p className="leading-relaxed">{message.content}</p>
-                    ) : (
-                      <div className="space-y-4">
-                        {message.content.children?.map((child, childIndex) => (
-                          <UIRenderer
-                            key={childIndex}
-                            component={child}
-                            onAction={handleButtonAction}
-                            formValues={formValues}
-                            onFormChange={handleFormChange}
-                          />
-                        ))}
+              <div className="flex flex-col md:-translate-x-6">
+                {typeof message.content === "string" ? (
+                  <>
+                    {message.reasoning && (
+                      <div className="mb-2">
+                        <ReasoningIndicator 
+                          reasoning={message.reasoning} 
+                          isComplete={true}
+                        />
                       </div>
                     )}
-                  </CardContent>
-                </Card>
+                    <div className="flex flex-row space-x-2">
+                      <Avatar className="size-6 shrink-0">
+                        <div className="bg-linear-to-br from-pink-500 to-yellow-500 h-8 w-8 rounded-full"></div>
+                      </Avatar>
+                      <div className="flex-1 text-gray-600 text-sm font-[450] min-w-0">
+                        <MarkdownRenderer content={message.content} />
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <div className="flex flex-row space-x-2">
+                    <Avatar className="size-6 shrink-0">
+                      <div className="bg-linear-to-br from-pink-500 to-yellow-500 h-8 w-8 rounded-full"></div>
+                    </Avatar>
+                    <Card className="flex-1 shadow-none bg-gray-50 border-gray-200 min-w-0">
+                      <CardContent className="text-gray-600 text-sm font-[450] px-3 md:px-5">
+                        <div className="space-y-4">
+                          {message.content.children?.map((child, childIndex) => (
+                            <UIRenderer
+                              key={childIndex}
+                              component={child}
+                              onAction={handleButtonAction}
+                              formValues={formValues}
+                              onFormChange={handleFormChange}
+                            />
+                          ))}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+                )}
               </div>
             )}
           </div>
         ))}
 
-        {isStreaming && (mode === 'ask' ? currentStreamingText : currentStreamingResponse) && (
-          <div className="flex flex-row space-x-2 md:-translate-x-6">
-            <Avatar className="size-6 mt-4 shrink-0">
-              <div className="bg-linear-to-br from-pink-500 to-yellow-500 h-8 w-8 rounded-full"></div>
-            </Avatar>
-            <Card className="flex-1 shadow-none bg-gray-50 border-gray-200 min-w-0">
-              <CardContent className="text-gray-600 text-sm font-[450] px-3 md:px-5">
-                {mode === 'ask' ? (
-                  <p className="leading-relaxed">{currentStreamingText}</p>
-                ) : (
-                  <div className="space-y-4">
-                    {currentStreamingResponse?.children?.map((child, index) => (
-                      <UIRenderer
-                        key={index}
-                        component={child}
-                        onAction={handleButtonAction}
-                        formValues={formValues}
-                        onFormChange={handleFormChange}
-                      />
-                    ))}
+        {isStreaming && (mode === 'ask' ? (currentReasoning || currentStreamingText) : currentStreamingResponse) && (
+          <div className="flex flex-col md:-translate-x-6">
+            {mode === 'ask' ? (
+              <>
+                {(currentReasoning || !isReasoningComplete) && (
+                  <div className="mb-2">
+                    <ReasoningIndicator 
+                      reasoning={currentReasoning} 
+                      isComplete={isReasoningComplete}
+                    />
                   </div>
                 )}
-                <div className="flex items-center gap-2 text-gray-400 text-xs mt-4">
-                  <div className="animate-spin h-3 w-3 border-2 border-gray-300 border-t-gray-600 rounded-full" />
-                  <span>Streaming...</span>
+                <div className="flex flex-row space-x-2">
+                  <Avatar className="size-6 shrink-0">
+                    <div className="bg-linear-to-br from-pink-500 to-yellow-500 h-8 w-8 rounded-full"></div>
+                  </Avatar>
+                  <div className="flex-1 text-gray-600 text-sm font-[450] min-w-0">
+                    {currentStreamingText && (
+                      <MarkdownRenderer content={currentStreamingText} />
+                    )}
+                    {isStreaming && !currentStreamingText && (
+                      <div className="flex items-center gap-2 text-gray-400 text-xs mt-4">
+                        <div className="animate-spin h-3 w-3 border-2 border-gray-300 border-t-gray-600 rounded-full" />
+                        <span>Streaming...</span>
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </CardContent>
-            </Card>
+              </>
+            ) : (
+              <div className="flex flex-row space-x-2">
+                <Avatar className="size-6 shrink-0">
+                  <div className="bg-linear-to-br from-pink-500 to-yellow-500 h-8 w-8 rounded-full"></div>
+                </Avatar>
+                <Card className="flex-1 shadow-none bg-gray-50 border-gray-200 min-w-0">
+                  <CardContent className="text-gray-600 text-sm font-[450] px-3 md:px-5">
+                    <div className="space-y-4">
+                      {currentStreamingResponse?.children?.map((child, index) => (
+                        <UIRenderer
+                          key={index}
+                          component={child}
+                          onAction={handleButtonAction}
+                          formValues={formValues}
+                          onFormChange={handleFormChange}
+                        />
+                      ))}
+                    </div>
+                    <div className="flex items-center gap-2 text-gray-400 text-xs mt-4">
+                      <div className="animate-spin h-3 w-3 border-2 border-gray-300 border-t-gray-600 rounded-full" />
+                      <span>Streaming...</span>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
           </div>
         )}
             </div>

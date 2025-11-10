@@ -7,6 +7,7 @@ import { ResponseRoot } from '@/components/llm-components';
 export interface Message {
   role: 'user' | 'assistant';
   content: string | ResponseRoot;
+  reasoning?: string; // Optional reasoning for assistant messages
 }
 
 export interface ChatTab {

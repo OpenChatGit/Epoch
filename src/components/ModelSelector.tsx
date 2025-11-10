@@ -10,7 +10,6 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { getProviderSettings } from '@/lib/settingsStore';
-import { AlertCircle } from 'lucide-react';
 
 interface Model {
   name: string;
@@ -28,9 +27,10 @@ export function ModelSelector({ value, onChange, onProviderError }: ModelSelecto
   const [models, setModels] = useState<Model[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isHovered, setIsHovered] = useState(false);
+  const [isReconnecting, setIsReconnecting] = useState(false);
 
-  useEffect(() => {
-    const fetchModels = async () => {
+  const fetchModels = async () => {
       try {
         const settings = getProviderSettings();
         
@@ -86,9 +86,11 @@ export function ModelSelector({ value, onChange, onProviderError }: ModelSelecto
         }
       } finally {
         setLoading(false);
+        setIsReconnecting(false);
       }
     };
 
+  useEffect(() => {
     fetchModels();
   }, []);
 
@@ -101,12 +103,31 @@ export function ModelSelector({ value, onChange, onProviderError }: ModelSelecto
     );
   }
 
-  if (error) {
+  if (error || isReconnecting) {
+    const handleReconnect = async () => {
+      setIsReconnecting(true);
+      await fetchModels();
+    };
+
     return (
-      <div className="text-xs text-red-600 px-3 py-2 h-9 flex items-center gap-1.5">
-        <AlertCircle size={14} />
-        <span>Not connected</span>
-      </div>
+      <button
+        onClick={handleReconnect}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+        disabled={isReconnecting}
+        className="text-xs px-3 py-2 h-9 flex items-center gap-1.5 rounded-lg transition-all duration-200 hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+      >
+        {isReconnecting ? (
+          <>
+            <div className="animate-spin h-3 w-3 border border-gray-400 border-t-gray-600 rounded-full pointer-events-none" />
+            <span className="text-gray-600 pointer-events-none">Connecting...</span>
+          </>
+        ) : (
+          <span className={`transition-all duration-200 pointer-events-none ${isHovered ? 'text-red-700 font-medium' : 'text-red-600'}`}>
+            {isHovered ? 'Reconnect' : 'Not connected'}
+          </span>
+        )}
+      </button>
     );
   }
 
