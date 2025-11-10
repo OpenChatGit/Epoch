@@ -10,6 +10,7 @@ import { ModelSelector } from "@/components/ModelSelector";
 import { ClientLayout } from "@/components/ClientLayout";
 import { ModeToggle } from "@/components/ModeToggle";
 import { getProviderSettings } from "@/lib/settingsStore";
+import { useToast } from "@/hooks/useToast";
 import {
   loadChatTabs,
   saveChatTabs,
@@ -34,6 +35,15 @@ export default function Home() {
   const [formValues, setFormValues] = useState<Record<string, string>>({});
   const [selectedModel, setSelectedModel] = useState("");
   const [mode, setMode] = useState<'ask' | 'agent'>('ask');
+  const { showToast, ToastContainer } = useToast();
+  const [providerChecked, setProviderChecked] = useState(false);
+
+  const handleProviderError = (provider: string, error: string) => {
+    if (!providerChecked) {
+      showToast(error, "error");
+      setProviderChecked(true);
+    }
+  };
 
   // Load tabs from localStorage on mount
   useEffect(() => {
@@ -150,6 +160,15 @@ export default function Home() {
       });
 
       if (!response.ok) {
+        const providerName = providerSettings.provider === 'openai' ? 'OpenAI' : 'Ollama';
+        if (response.status === 500) {
+          const errorText = await response.text();
+          showToast(`${providerName} not connected`, "error");
+        } else if (response.status === 401) {
+          showToast(`${providerName} authentication failed`, "error");
+        } else {
+          showToast(`${providerName} error: ${response.status}`, "error");
+        }
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
@@ -217,6 +236,16 @@ export default function Home() {
       }
     } catch (err) {
       console.error("Streaming error:", err);
+      const providerSettings = getProviderSettings();
+      const providerName = providerSettings.provider === 'openai' ? 'OpenAI' : 'Ollama';
+      
+      // Check if it's a network error
+      if (err instanceof TypeError && err.message.includes('fetch')) {
+        showToast(`${providerName} not reachable`, "error");
+      } else {
+        showToast(`Connection to ${providerName} failed`, "error");
+      }
+      
       updateTabMessages(tabId, [
         ...currentMessages,
         {
@@ -287,14 +316,16 @@ export default function Home() {
   };
 
   return (
-    <ClientLayout
-      tabs={tabs}
-      activeTabId={activeTabId}
-      onTabSelect={setActiveTabId}
-      onNewTab={handleNewTab}
-      onDeleteTab={handleDeleteTab}
-    >
-      <div className="bg-white w-full h-[calc(100vh-40px)] flex flex-col relative">
+    <>
+      <ToastContainer />
+      <ClientLayout
+        tabs={tabs}
+        activeTabId={activeTabId}
+        onTabSelect={setActiveTabId}
+        onNewTab={handleNewTab}
+        onDeleteTab={handleDeleteTab}
+      >
+        <div className="bg-white w-full h-[calc(100vh-40px)] flex flex-col relative">
       {!hasMessages || hasNoTabs ? (
         <div className="flex-1 flex items-center justify-center">
           <div className="w-full max-w-[802px] px-4 md:px-0">
@@ -311,7 +342,11 @@ export default function Home() {
               <div className="flex items-center justify-between gap-2 mt-3">
                 <ModeToggle mode={mode} onChange={setMode} />
                 <div className="flex items-center gap-2">
-                <ModelSelector value={selectedModel} onChange={setSelectedModel} />
+                <ModelSelector 
+                  value={selectedModel} 
+                  onChange={setSelectedModel}
+                  onProviderError={handleProviderError}
+                />
                 <button
                   onClick={handleSend}
                   disabled={isStreaming || !input.trim()}
@@ -417,7 +452,11 @@ export default function Home() {
                 <div className="flex items-center justify-between gap-2 mt-3">
                   <ModeToggle mode={mode} onChange={setMode} />
                   <div className="flex items-center gap-2">
-                  <ModelSelector value={selectedModel} onChange={setSelectedModel} />
+                  <ModelSelector 
+                    value={selectedModel} 
+                    onChange={setSelectedModel}
+                    onProviderError={handleProviderError}
+                  />
                   <button
                     onClick={handleSend}
                     disabled={isStreaming || !input.trim()}
@@ -433,7 +472,8 @@ export default function Home() {
           </div>
         </>
       )}
-      </div>
-    </ClientLayout>
+        </div>
+      </ClientLayout>
+    </>
   );
 }
